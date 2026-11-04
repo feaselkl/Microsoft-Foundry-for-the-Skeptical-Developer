@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Help Desk Agent on Foundry &mdash; Cost Model</title>
+<style>
+  :root {
+    --bg:#15171c; --panel:#1d2027; --panel2:#23262f; --line:#32363f;
+    --ink:#e8eaed; --dim:#9aa0aa; --accent:#5ac8fa; --warn:#ffb454;
+    --good:#7ddc8a; --bad:#ff7b72;
+    font-size:16px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font:1rem/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    padding:1.5rem;
+  }
+  h1{font-size:1.6rem; margin:0 0 .2rem}
+  h2{font-size:1rem; text-transform:uppercase; letter-spacing:.08em;
+     color:var(--dim); margin:0 0 .8rem; font-weight:600}
+  .sub{color:var(--dim); margin:0 0 1.5rem; max-width:70ch}
+  .wrap{display:grid; grid-template-columns:minmax(320px,420px) 1fr; gap:1.5rem; align-items:start}
+  @media (max-width:980px){ .wrap{grid-template-columns:1fr} }
+  .panel{background:var(--panel); border:1px solid var(--line);
+         border-radius:10px; padding:1.2rem}
+  .panel + .panel{margin-top:1rem}
+
+  /* sliders */
+  .ctl{margin-bottom:1.1rem}
+  .ctl:last-child{margin-bottom:0}
+  .ctl label{display:flex; justify-content:space-between; align-items:baseline;
+             font-size:.9rem; margin-bottom:.35rem; gap:1rem}
+  .ctl .val{font-variant-numeric:tabular-nums; font-weight:700; color:var(--accent); white-space:nowrap}
+  .ctl .hint{display:block; color:var(--dim); font-size:.78rem; margin-top:.25rem}
+  input[type=range]{width:100%; accent-color:var(--accent); margin:0}
+
+  /* totals */
+  .cards{display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem}
+  @media (max-width:640px){ .cards{grid-template-columns:1fr} }
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:1.1rem}
+  .card.hl{border-color:var(--accent)}
+  .card .lbl{font-size:.8rem; text-transform:uppercase; letter-spacing:.06em; color:var(--dim)}
+  .card .big{font-size:2.3rem; font-weight:700; font-variant-numeric:tabular-nums; line-height:1.1; margin:.3rem 0}
+  .card .per{font-size:.85rem; color:var(--dim)}
+  .delta{font-size:.85rem; color:var(--warn); margin-top:.5rem}
+
+  table{width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums}
+  th,td{text-align:right; padding:.45rem .5rem; border-bottom:1px solid var(--line); font-size:.9rem}
+  th:first-child,td:first-child{text-align:left}
+  th{color:var(--dim); font-weight:600; font-size:.78rem; text-transform:uppercase; letter-spacing:.05em}
+  tr.total td{border-top:2px solid var(--line); border-bottom:none; font-weight:700; font-size:1rem}
+  td.unit{color:var(--dim); font-size:.78rem; text-align:left}
+  .bar{height:6px; background:var(--panel2); border-radius:3px; overflow:hidden; margin-top:.25rem}
+  .bar>i{display:block; height:100%; background:var(--accent)}
+
+  .note{background:var(--panel2); border-left:3px solid var(--warn);
+        padding:.8rem 1rem; border-radius:0 6px 6px 0; margin-top:1rem; font-size:.92rem}
+  .note b{color:var(--warn)}
+  details{margin-top:1rem}
+  summary{cursor:pointer; color:var(--accent); font-size:.9rem; padding:.3rem 0}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:.6rem 1rem; margin-top:.8rem}
+  .num label{display:block; font-size:.8rem; color:var(--dim)}
+  .num input{width:100%; background:var(--panel2); border:1px solid var(--line);
+             color:var(--ink); border-radius:5px; padding:.35rem .5rem; font-size:.9rem}
+  footer{margin-top:1.5rem; color:var(--dim); font-size:.8rem; max-width:90ch}
+  footer code{background:var(--panel2); padding:.1rem .3rem; border-radius:3px}
+  .toggle{display:flex; align-items:center; gap:.5rem; font-size:.9rem}
+  .toggle input{accent-color:var(--accent); width:1.1rem; height:1.1rem}
+</style>
+</head>
+<body>
+
+<h1>Help Desk Agent on Microsoft Foundry</h1>
+<p class="sub">
+  Four features on one agent: automated ticket triage, a knowledge base over historical
+  tickets, research assistance for resolvers, and a self-service chat front door.
+  Move the sliders. Every price is a real Azure meter &mdash; see the footer.
+</p>
+
+<div class="wrap">
+
+  <div>
+    <div class="panel">
+      <h2>Demand</h2>
+      <div class="ctl">
+        <label for="employees">Employees <span class="val" id="employees-v"></span></label>
+        <input type="range" id="employees" min="250" max="10000" step="50" value="2000">
+      </div>
+      <div class="ctl">
+        <label for="tpe">Tickets per employee / month <span class="val" id="tpe-v"></span></label>
+        <input type="range" id="tpe" min="0.5" max="8" step="0.1" value="3">
+        <span class="hint">Raw demand before any self-service deflection.</span>
+      </div>
+      <div class="ctl">
+        <label for="selfpct">Start in self-service chat <span class="val" id="selfpct-v"></span></label>
+        <input type="range" id="selfpct" min="0" max="100" step="1" value="35">
+      </div>
+      <div class="ctl">
+        <label for="deflect">Chats resolved without a ticket <span class="val" id="deflect-v"></span></label>
+        <input type="range" id="deflect" min="0" max="90" step="1" value="40">
+        <span class="hint">Deflection cuts both ways: it removes a ticket, so it removes triage and research cost too.</span>
+      </div>
+      <div class="ctl">
+        <label for="researchpct">Tickets getting a research pass <span class="val" id="researchpct-v"></span></label>
+        <input type="range" id="researchpct" min="0" max="100" step="1" value="60">
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Model</h2>
+      <div class="ctl">
+        <label for="model">Chat model <span class="val" id="model-v"></span></label>
+        <select id="model" style="width:100%; background:var(--panel2); color:var(--ink); border:1px solid var(--line); border-radius:5px; padding:.4rem .5rem; font-size:.95rem">
+          <option value="gpt-6-luna">gpt-6-luna &mdash; $0.10 / $0.50</option>
+          <option value="gpt-5-mini" selected>gpt-5-mini &mdash; $0.25 / $2.00</option>
+          <option value="gpt-5.4-mini">gpt-5.4-mini &mdash; $0.75 / $4.50</option>
+          <option value="gpt-6.1-sol">gpt-6.1-sol &mdash; $2.00 / $10.00</option>
+        </select>
+        <span class="hint">Input / output per 1M tokens. Price does not track recency: the newest model here is the cheapest.</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Hosted agent</h2>
+      <div class="ctl toggle">
+        <input type="checkbox" id="hosted" checked>
+        <label for="hosted" style="display:inline">Run as a Foundry hosted agent</label>
+      </div>
+      <div class="ctl">
+        <label for="vcpu">vCPU per replica <span class="val" id="vcpu-v"></span></label>
+        <input type="range" id="vcpu" min="0.25" max="4" step="0.25" value="0.5">
+      </div>
+      <div class="ctl">
+        <label for="mem">Memory GiB per replica <span class="val" id="mem-v"></span></label>
+        <input type="range" id="mem" min="0.5" max="8" step="0.5" value="1">
+      </div>
+      <div class="ctl">
+        <label for="replicas">Replicas running 24/7 <span class="val" id="replicas-v"></span></label>
+        <input type="range" id="replicas" min="1" max="10" step="1" value="1">
+        <span class="hint">This is the line that does not care how many tickets you get.</span>
+      </div>
+    </div>
+
+    <details>
+      <summary>Per-operation assumptions &mdash; adjust if you disagree</summary>
+      <div class="grid2">
+        <div class="num"><label for="a-triageIn">Triage input tok</label><input id="a-triageIn" type="number" value="1200"></div>
+        <div class="num"><label for="a-triageOut">Triage output tok</label><input id="a-triageOut" type="number" value="150"></div>
+        <div class="num"><label for="a-chatTurns">Chat turns</label><input id="a-chatTurns" type="number" value="6"></div>
+        <div class="num"><label for="a-chatIn">Chat input tok / turn</label><input id="a-chatIn" type="number" value="2500"></div>
+        <div class="num"><label for="a-chatOut">Chat output tok / turn</label><input id="a-chatOut" type="number" value="250"></div>
+        <div class="num"><label for="a-resSteps">Research steps</label><input id="a-resSteps" type="number" value="3"></div>
+        <div class="num"><label for="a-resIn">Research input tok / step</label><input id="a-resIn" type="number" value="4000"></div>
+        <div class="num"><label for="a-resOut">Research output tok / step</label><input id="a-resOut" type="number" value="600"></div>
+        <div class="num"><label for="a-web">Web grounding calls / research</label><input id="a-web" type="number" step="0.1" value="1.5"></div>
+        <div class="num"><label for="a-cached">Cached input share %</label><input id="a-cached" type="number" value="40"></div>
+        <div class="num"><label for="a-kb">Historical tickets in KB</label><input id="a-kb" type="number" value="50000"></div>
+        <div class="num"><label for="a-kbKB">KB size per ticket (KB)</label><input id="a-kbKB" type="number" step="0.1" value="2"></div>
+        <div class="num"><label for="a-embTok">Embedding tok / ticket</label><input id="a-embTok" type="number" value="400"></div>
+        <div class="num"><label for="a-traceKB">Trace size per run (KB)</label><input id="a-traceKB" type="number" step="0.1" value="2"></div>
+        <div class="num"><label for="a-tracePct">Runs traced %</label><input id="a-tracePct" type="number" value="100"></div>
+        <div class="num"><label for="a-codePct">Research using code interpreter %</label><input id="a-codePct" type="number" value="10"></div>
+      </div>
+    </details>
+  </div>
+
+  <div>
+    <div class="cards">
+      <div class="card">
+        <div class="lbl">Without hosted agent</div>
+        <div class="big" id="total-no"></div>
+        <div class="per" id="per-no"></div>
+      </div>
+      <div class="card hl">
+        <div class="lbl">With hosted agent</div>
+        <div class="big" id="total-yes"></div>
+        <div class="per" id="per-yes"></div>
+        <div class="delta" id="delta"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Monthly breakdown</h2>
+      <table>
+        <thead>
+          <tr><th>Line item</th><th>Volume</th><th>Rate</th><th>Cost</th><th style="width:90px">Share</th></tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <div class="note" id="insight"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Workload</h2>
+      <table><tbody id="vol"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>
+    <b>Prices.</b> Pulled from the public
+    <a href="https://prices.azure.com/api/retail/prices" style="color:var(--accent)">Azure Retail Prices API</a>
+    on <b>2026-10-16</b>, USD, Global Standard deployment where a choice exists.
+    Data Zone runs roughly 10% higher. Re-pull with <code>python3 refresh-prices.py</code>
+    and paste the result over the <code>PRICES</code> block in this file.
+  </p>
+  <p>
+    Models, per 1M tokens input / cached / output, Global Standard short context:
+    <code>6-luna</code> ($0.10 / $0.01 / $0.50),
+    <code>GPT 5 Mini</code> ($0.25 / $0.025 / $2.00),
+    <code>5.4 mini</code> ($0.75 / $0.075 / $4.50),
+    <code>6.1-sol</code> ($2.00 / $0.10 / $10.00). Other meters:
+    <code>text-embedding-3-small-glbl</code> ($0.02 per 1M),
+    <code>Assistants-File Search-glbl</code> ($0.10 per GB-day),
+    <code>Web Grounding Calls</code> ($14.00 per 1K),
+    <code>Code-Interpreter-global Session</code> ($0.03 each),
+    <code>Hosted vCPU Usage</code> ($0.10934 per vCPU-hour),
+    <code>Hosted Memory Usage</code> ($0.0118 per GiB-hour),
+    and Log Analytics <code>Standard Data Analyzed</code> ($2.30 per GB).
+  </p>
+  <p>
+    <b>Not modelled.</b> Provisioned throughput (a reservation, not a rate), Agent
+    Commit Units, managed-compute VM hours, Azure AI Search if you outgrow file search,
+    log retention beyond ingestion, and egress. This is a shape-of-the-bill model, not a quote.
+  </p>
+</footer>
+
+<script>
+// Azure Retail Prices API, re-verified 2026-10-16 (unchanged from 2026-10-11), USD, Global Standard.
+// Regenerate with refresh-prices.py.
+const PRICES = {
+  modelIn:      0.25,     // per 1M input tokens
+  modelCached:  0.025,    // per 1M cached input tokens
+  modelOut:     2.0,      // per 1M output tokens
+  embed:        2e-05,    // per 1K tokens
+  fileSearch:   0.1,      // per GB per day
+  webGrounding: 14.0,     // per 1K calls
+  codeSession:  0.03,     // per session
+  vcpuHour:     0.10934,  // per vCPU-hour
+  memHour:      0.0118,   // per GiB-hour
+  logGB:        2.30      // Log Analytics Standard Data Analyzed, per GB
+};
+
+// Per 1M tokens, Global Standard, short context. Same API, same pull date.
+// gpt-5-mini is the default because it is what the demo environment deploys
+// and what the section-6 slide quotes.
+const MODELS = {
+  "gpt-6-luna":   { in: 0.10, cached: 0.01,  out: 0.50,  note: "GA 2026-09-22" },
+  "gpt-5-mini":   { in: 0.25, cached: 0.025, out: 2.00,  note: "retires 2027-02-09" },
+  "gpt-5.4-mini": { in: 0.75, cached: 0.075, out: 4.50,  note: "retires 2027-09-21" },
+  "gpt-6.1-sol":  { in: 2.00, cached: 0.10,  out: 10.00, note: "GA 2026-09-29" }
+};
+const HOURS = 730, DAYS = 30;
+
+const $ = id => document.getElementById(id);
+const money = n => n < 10
+  ? "$" + n.toFixed(2)
+  : "$" + Math.round(n).toLocaleString();
+const num = n => n >= 1000 ? Math.round(n).toLocaleString() : (Math.round(n * 10) / 10).toLocaleString();
+
+const SLIDERS = {
+  employees:   v => num(v),
+  tpe:         v => (+v).toFixed(1),
+  selfpct:     v => v + "%",
+  deflect:     v => v + "%",
+  researchpct: v => v + "%",
+  vcpu:        v => (+v).toFixed(2),
+  mem:         v => (+v).toFixed(1),
+  replicas:    v => v
+};
+
+function read() {
+  const g = id => +$(id).value;
+  return {
+    employees: g("employees"), tpe: g("tpe"),
+    model: $("model").value,
+    selfpct: g("selfpct") / 100, deflect: g("deflect") / 100,
+    researchpct: g("researchpct") / 100,
+    hosted: $("hosted").checked,
+    vcpu: g("vcpu"), mem: g("mem"), replicas: g("replicas"),
+    triageIn: g("a-triageIn"), triageOut: g("a-triageOut"),
+    chatTurns: g("a-chatTurns"), chatIn: g("a-chatIn"), chatOut: g("a-chatOut"),
+    resSteps: g("a-resSteps"), resIn: g("a-resIn"), resOut: g("a-resOut"),
+    web: g("a-web"), cached: g("a-cached") / 100,
+    kb: g("a-kb"), kbKB: g("a-kbKB"), embTok: g("a-embTok"),
+    traceKB: g("a-traceKB"), tracePct: g("a-tracePct") / 100,
+    codePct: g("a-codePct") / 100
+  };
+}
+
+function model(p) {
+  // ---- volumes -------------------------------------------------------
+  const demand    = p.employees * p.tpe;
+  const chats     = demand * p.selfpct;
+  const deflected = chats * p.deflect;
+  const tickets   = demand - deflected;          // reach a human resolver
+  const research  = tickets * p.researchpct;
+  const chatTurns = chats * p.chatTurns;
+  const resCalls  = research * p.resSteps;
+
+  // ---- tokens --------------------------------------------------------
+  const inTok  = tickets * p.triageIn  + chatTurns * p.chatIn  + resCalls * p.resIn;
+  const outTok = tickets * p.triageOut + chatTurns * p.chatOut + resCalls * p.resOut;
+  const cachedTok = inTok * p.cached;
+  const freshTok  = inTok - cachedTok;
+
+  const rate = MODELS[p.model] || MODELS["gpt-5-mini"];
+  const costIn     = freshTok  / 1e6 * rate.in;
+  const costCached = cachedTok / 1e6 * rate.cached;
+  const costOut    = outTok    / 1e6 * rate.out;
+  const per = n => "$" + (n < 0.1 ? n.toFixed(3) : n.toFixed(2)) + " / 1M";
+
+  // ---- knowledge base ------------------------------------------------
+  const embedTok  = tickets * p.embTok;                       // ongoing only
+  const costEmbed = embedTok / 1e3 * PRICES.embed;
+  const kbGB      = (p.kb * p.kbKB) / 1e6;
+  const costKB    = kbGB * PRICES.fileSearch * DAYS;
+
+  // ---- tools ---------------------------------------------------------
+  const webCalls  = research * p.web;
+  const costWeb   = webCalls / 1e3 * PRICES.webGrounding;
+  const codeRuns  = research * p.codePct;
+  const costCode  = codeRuns * PRICES.codeSession;
+
+  // ---- observability -------------------------------------------------
+  const runs     = tickets + chatTurns + resCalls;
+  const traceGB  = runs * p.tracePct * p.traceKB / 1e6;
+  const costTrace = traceGB * PRICES.logGB;
+
+  // ---- hosted agent --------------------------------------------------
+  const costHost = p.replicas * HOURS * (p.vcpu * PRICES.vcpuHour + p.mem * PRICES.memHour);
+
+  const rows = [
+    ["Model &mdash; fresh input", num(freshTok / 1e6) + "M tok", per(rate.in), costIn],
+    ["Model &mdash; cached input", num(cachedTok / 1e6) + "M tok", per(rate.cached), costCached],
+    ["Model &mdash; output", num(outTok / 1e6) + "M tok", per(rate.out), costOut],
+    ["Web grounding", num(webCalls) + " calls", "$14.00 / 1K", costWeb],
+    ["Code interpreter", num(codeRuns) + " sessions", "$0.03 ea", costCode],
+    ["Embeddings (new tickets)", num(embedTok / 1e6) + "M tok", "$0.02 / 1M", costEmbed],
+    ["File search storage", kbGB.toFixed(2) + " GB", "$0.10 / GB-day", costKB],
+    ["Tracing &rarr; Log Analytics", traceGB.toFixed(2) + " GB", "$2.30 / GB", costTrace]
+  ];
+
+  const variable = rows.reduce((s, r) => s + r[3], 0);
+  return {
+    rows, variable, costHost,
+    volumes: [
+      ["Raw demand", num(demand) + " tickets/mo"],
+      ["Started in self-service", num(chats) + " chats"],
+      ["Deflected (never a ticket)", num(deflected)],
+      ["Reached a resolver", num(tickets) + " tickets"],
+      ["Research passes", num(research)],
+      ["Total agent runs", num(runs)]
+    ]
+  };
+}
+
+function render() {
+  for (const id in SLIDERS) $(id + "-v").textContent = SLIDERS[id]($(id).value);
+  $("model-v").textContent = (MODELS[$("model").value] || {}).note || "";
+
+  const p = read();
+  const m = model(p);
+  const totalNo = m.variable;
+  const totalYes = m.variable + m.costHost;
+
+  $("total-no").textContent = money(totalNo);
+  $("total-yes").textContent = money(totalYes);
+  $("per-no").textContent = "$" + (totalNo / p.employees).toFixed(3) + " per employee / month";
+  $("per-yes").textContent = "$" + (totalYes / p.employees).toFixed(3) + " per employee / month";
+  $("delta").textContent =
+    "+" + money(m.costHost) + " of container compute, whether or not anyone files a ticket";
+
+  const shown = p.hosted ? totalYes : totalNo;
+  const rows = m.rows.slice();
+  if (p.hosted) {
+    rows.push(["Hosted agent compute",
+      p.replicas + " × " + p.vcpu + " vCPU / " + p.mem + " GiB",
+      "$0.109 vCPU-h + $0.012 GiB-h", m.costHost]);
+  }
+
+  $("rows").innerHTML = rows.map(([label, vol, rate, cost]) => {
+    const pct = shown > 0 ? (cost / shown * 100) : 0;
+    return `<tr>
+      <td>${label}</td><td>${vol}</td><td class="unit">${rate}</td>
+      <td>${money(cost)}</td>
+      <td>${pct.toFixed(0)}%<div class="bar"><i style="width:${Math.min(100, pct)}%"></i></div></td>
+    </tr>`;
+  }).join("") + `<tr class="total">
+      <td>Total${p.hosted ? " (with hosted agent)" : ""}</td><td></td><td></td>
+      <td>${money(shown)}</td><td></td></tr>`;
+
+  $("vol").innerHTML = m.volumes
+    .map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
+
+  // Name the biggest line, because it is rarely the one people expect.
+  const biggest = rows.reduce((a, b) => (b[3] > a[3] ? b : a));
+  const modelTotal = m.rows.slice(0, 3).reduce((s, r) => s + r[3], 0);
+  const modelPct = shown > 0 ? modelTotal / shown * 100 : 0;
+  $("insight").innerHTML =
+    `Largest single line: <b>${biggest[0].replace(/&mdash;/g, "—")}</b> at ` +
+    `${money(biggest[3])}. The model itself is <b>${modelPct.toFixed(0)}%</b> of the bill ` +
+    `(${money(modelTotal)}). ` +
+    (p.hosted
+      ? `Container compute is a <b>fixed floor of ${money(m.costHost)}</b> &mdash; it is the same at zero tickets.`
+      : `Turn the hosted agent on to see what a 24/7 container adds.`);
+}
+
+document.querySelectorAll("input, select").forEach(el => {
+  el.addEventListener("input", render);
+  el.addEventListener("change", render);
+});
+render();
+</script>
+</body>
+</html>

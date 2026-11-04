@@ -1,0 +1,5 @@
+# Newest 2.x. The upper bound is deliberate: an open-ended "mcp>=1.2.0" picked
+# up the 1.x -> 2.x major release, which renamed FastMCP to MCPServer and moved
+# transport settings to run(), and the container crashed on import. Revisit at
+# 3.0 on purpose rather than by accident.
+mcp>=2.3.0,<3

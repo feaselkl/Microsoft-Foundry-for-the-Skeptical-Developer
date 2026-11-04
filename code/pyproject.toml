@@ -1,0 +1,14 @@
+[project]
+name = "microsoft-foundry-for-the-skeptical-developer"
+version = "0.1.0"
+description = "Microsoft Foundry demos for the Microsoft Foundry for the Skeptical Developer presentation"
+requires-python = ">=3.12"
+dependencies = [
+    "azure-ai-projects>=2.4.0",
+    "azure-identity",
+    "openai",
+    "python-dotenv",
+    "azure-monitor-opentelemetry",
+    "azure-core-tracing-opentelemetry",
+    "opentelemetry-sdk",
+]

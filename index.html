@@ -1,0 +1,743 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>Catallaxy Services | Microsoft Foundry for the Skeptical Developer</title>
+
+		<link rel="stylesheet" href="../reveal.js-6/dist/reset.css">
+		<link rel="stylesheet" href="../reveal.js-6/dist/reveal.css">
+		<link rel="stylesheet" href="../reveal.js-6/dist/theme/black.css" id="theme">
+		<link rel="stylesheet" href="../WebsiteAssets/mods.css">
+
+		<!-- Theme used for syntax highlighted code -->
+		<link rel="stylesheet" href="../reveal.js-6/dist/plugin/highlight/monokai.css" id="highlight-theme">
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<section data-background-image="presentation/assets/image/Bubbles.jpg" data-background-opacity="0.4">
+					<h2>Microsoft Foundry</h2>
+					<h3>for the Skeptical Developer</h3>
+
+					<a href="https://www.catallaxyservices.com">Kevin Feasel</a> (<a href="https://twitter.com/feaselkl">@feaselkl</a>)<br />
+					<a href="https://csmore.info/on/foundry-skeptic">https://csmore.info/on/foundry-skeptic</a>
+				</section>
+
+				<section data-background-image="presentation/assets/image/Bubbles.jpg" data-background-opacity="0.4">
+					<h3>Who Am I? What Am I Doing Here?</h3>
+					<div class="container">
+						<div class="col">
+							<table class="whoami">
+								<tr>
+									<td><a href="https://csmore.info"><img src="../WebsiteAssets/Logo.png" height="100" /></a></td>
+									<td nowrap><a href="https://csmore.info">Catallaxy Services</a></td>
+								</tr>
+								<tr>
+									<td><a href="https://curatedsql.com"><img src="../WebsiteAssets/CuratedSQLLogo.png" height="100" /></a></td>
+									<td nowrap><a href="https://curatedsql.com">Curated SQL</a></td>
+								</tr>
+								<tr>
+									<td><a href="https://www.amazon.com/Finding-Ghosts-Your-Data-Techniques/dp/1484288696"><img src="../WebsiteAssets/Finding-Ghosts.jpg" height="120" /></a></td>
+									<td nowrap><a href="https://www.amazon.com/Finding-Ghosts-Your-Data-Techniques/dp/1484288696">Finding Ghosts in Your Data</a></td>
+								</tr>
+							</table>
+						</div>
+						<div class="col">
+							<a href="http://www.twitter.com/feaselkl"><img src="../WebsiteAssets/HeadShot.jpg" height="358" width="315" /></a>
+							<br />
+							<a href="http://www.twitter.com/feaselkl">@feaselkl</a>
+						</div>
+					</div>
+				</section>
+
+				<section data-background-image="presentation/assets/background/motivation.jpg" data-background-opacity="0.2">
+					<h3>Motivation</h3>
+
+					<p>Most AI platform talks are demos disguised as sales pitches. This one is not.</p>
+
+					<p>Microsoft Foundry has been renamed twice, split into two portals, replaced its agent API, and retired its flagship orchestration tool over the course of two years.</p>
+
+					<p>If that has made you skeptical, <strong>you are reading the evidence correctly.</strong> The question is whether there is a product worth adopting underneath all that motion.</p>
+				</section>
+
+				<section data-background-image="presentation/assets/background/caution.jpg" data-background-opacity="0.2">
+					<h3>Before We Start</h3>
+
+					<p>Everything here is accurate as of <strong>2026-10-16</strong>. This platform changes faster than almost anything else in Azure.</p>
+
+					<p>Several features I will show are in <strong>preview</strong>. I will say so each time.</p>
+
+					<p>This talk assumes you can read Python, and that you know what an LLM API call does. It does <strong>not</strong> assume you have used Foundry, Azure ML, or an agent framework before.</p>
+				</section>
+
+				<section data-background-image="presentation/assets/image/Bubbles.jpg" data-background-opacity="0.4">
+					<h3>Agenda</h3>
+
+					<ol>
+						<li class="active">Microsoft Foundry (Today)</li>
+						<li>The Model Catalog: Read the Fine Print</li>
+						<li>Agents: The Actual Product</li>
+						<li>Observability: Where Foundry Earns Its Keep</li>
+						<li>The Honest Assessment</li>
+					</ol>
+				</section>
+
+				<section data-background-image="presentation/assets/background/blueprints.jpg" data-background-opacity="0.2">
+					<h3>The Current Resource Model</h3>
+
+					<p>One <strong>Foundry resource</strong> in Azure that contains one or more <strong>projects</strong>.</p>
+
+					<ul>
+						<li>The <strong>resource</strong> owns identity, networking, and policy</li>
+						<li>A <strong>project</strong> owns the work: models, agents, tools, data</li>
+						<li>Each project has <strong>one endpoint</strong>, and that is the only URL your code needs</li>
+					</ul>
+
+					<p>This setup replaces the old hub + Azure OpenAI + Azure AI Services sprawl.</p>
+				</section>
+
+				<section data-background-image="presentation/assets/background/crt.jpg" data-background-opacity="0.2">
+					<h3>Two Microsoft Foundry Portals</h3>
+
+					<p>Microsoft Foundry has two completely different portals that handle two different resource models.</p>
+
+					<ul>
+						<li><strong>Foundry</strong>: resource plus projects. This is where the new investment goes.</li>
+						<li><strong>Foundry (classic)</strong>: hub-based projects. Some real work still lives here.</li>
+					</ul>
+
+					<p>The documentation is now up to date on the "new" portal but many online examples will still reference the classic portal or its prior iteration.</p>
+				</section>
+
+				<section data-background-image="presentation/assets/background/tools.jpg" data-background-opacity="0.2">
+					<h3>The SDK Consolidation</h3>
+
+					<p>The SDK includes one package and one endpoint to one OpenAI-compatible client.</p>
+
+					<pre><code class="language-python" data-trim data-noescape>
+project = AIProjectClient(endpoint=ENDPOINT, credential=DefaultAzureCredential())
+openai  = project.get_openai_client()
+reply   = openai.responses.create(model="gpt-5-mini", input="...")
+					</code></pre>
+
+					<p>Replaces <code>azure-ai-inference</code>, <code>azure-ai-generative</code>, and <code>azure-ai-ml</code> across 5+ endpoints.</p>
+
+					<p>This follows Microsoft's Secure Future Initiative (SFI), so it biases heavily toward using Microsoft Entra instead of API keys for authentication and access control.</p>
+
+					<aside class="notes">
+						The one slide where the Azure OpenAI veterans perk up -- it is their migration story. Give them thirty seconds, then come back to the newcomers.
+
+						Point at get_openai_client(). The thing Foundry hands you is the OpenAI client, not a bespoke Azure surface. Plant that: section 6 spends it on the lock-in argument.
+
+						THE RBAC TRAP -- worth 60 seconds, and it is the best "read the fine print" moment in this section:
+
+						Built-in Owner is actions:["*"] with dataActions:[]. So is Contributor. They let you CREATE a Foundry resource and never CALL it. Calling needs a Foundry role (Foundry User / Project Manager / Owner), which grants Microsoft.CognitiveServices/* as a DATA action.
+
+						Prove it live if you want it: az role definition list --name Owner --query "[0].permissions[0].dataActions"  ->  []
+
+						The failure mode is a 403 with an EMPTY body. No message. And you get the identical 403 for a role that has not propagated yet -- measured at 5m12s on a fresh assignment. Same symptom, two causes, no way to tell them apart from the response.
+
+						If this lands well, it deserves its own slide. Left inline to protect the 8-minute budget.
+					</aside>
+				</section>
+
+				<section data-background-image="presentation/assets/background/demo.jpg" data-background-opacity="0.2">
+					<h3>Demo Time</h3>
+
+					<aside class="notes">
+						code/demos/02_platform -- create a project, walk the portal, one model call with the unified SDK.
+					</aside>
+				</section>
+
+				<section data-background-image="presentation/assets/image/Bubbles.jpg" data-background-opacity="0.4">
+					<h3>Agenda</h3>
+
+					<ol>
+						<li>Microsoft Foundry (Today)</li>
+						<li class="active">The Model Catalog: Read the Fine Print</li>
+						<li>Agents: The Actual Product</li>
+						<li>Observability: Where Foundry Earns Its Keep</li>
+						<li>The Honest Assessment</li>
+					</ol>
+				</section>
+
+				<section data-background-image="presentation/assets/background/warehouse.jpg" data-background-opacity="0.2">
+					<h3>Ten Thousand Models</h3>
+
+					<p><strong>10,000+ models</strong>, and roughly 50 more every month.</p>
+
+					<p>Microsoft, OpenAI, Anthropic, Meta, Mistral, Cohere, DeepSeek, NVIDIA, Hugging Face.</p>
+
+					<p>This is impressive, but it is a marketing number. It tells you nothing you can act on.</p>
+
+					<aside class="notes">
+						Set up the reveal: the count is marketing, the commercial tier is what you actually live with.
+					</aside>
+				</section>
+
+				<section data-background-image="presentation/assets/background/handshake.jpg" data-background-opacity="0.2">
+					<h3>Who Sells It? Who Stands Behind It?</h3>
+
+					<p>The catalog splits in two and this split decides whose product you are actually buying.</p>
+
+					<table style="font-size:0.75em">
+						<tr><th></th><th>gpt-6-sol<br><small>sold by Azure</small></th><th>Claude Opus 5.5<br><small>partners and community</small></th></tr>
+						<tr><td>Seller</td><td>Microsoft</td><td>Anthropic</td></tr>
+						<tr><td>SLA</td><td>Microsoft</td><td>Anthropic</td></tr>
+						<tr><td>Terms for your data</td><td>Microsoft Product Terms</td><td>Anthropic's terms</td></tr>
+						<tr><td>Billing</td><td>Azure meters</td><td>Azure Marketplace, Claude Consumption Units</td></tr>
+						<tr><td>Content filtering</td><td>Foundry defaults</td><td>None built in; you add it</td></tr>
+						<tr><td>Support</td><td>Microsoft Support</td><td>Microsoft Support</td></tr>
+					</table>
+
+					<p class="fragment">One support number. Two contracts.</p>
+
+					<aside class="notes">
+						The fine print the keynote skips, and the most useful slide in the section for someone new to Azure. Show both model cards in the catalog while this is up.
+
+						The surprise is the LAST row. Support is the one thing that does not change: Microsoft's own comparison page says to contact Microsoft Support for Claude, for both hosting versions. Everything above it does change. You bought a Microsoft product and an Anthropic product, on one Azure invoice.
+
+						Billing detail if asked: Claude subscribes through an Azure Marketplace offer and meters in Claude Consumption Units, but Microsoft still bills it on the Azure invoice and it counts toward a MACC commitment.
+
+						Content filtering is the row with teeth. Microsoft's Claude page says Foundry does not provide built-in content filtering for Claude models at deployment time; Anthropic's own safety systems run, and anything else is yours to add. That is the honest version of "safety is not free", and it ties forward to the Responsible AI talk.
+
+						Claude comes in two versions. Hosted on Azure is the default when you deploy and keeps data in your Azure geography. Hosted on Anthropic can process data outside Azure but gets more API features. Same seller, same SLA, same support either way.
+
+						Support is not uniform across the partner tier: Hugging Face models point you to Hugging Face. Do not generalize Claude's support path to every partner model.
+					</aside>
+				</section>
+
+				<section data-background-image="presentation/assets/background/folders.jpg" data-background-opacity="0.2">
+					<h3>Nine Ways to Deploy One Model</h3>
+
+					<p>First, two hosting models:</p>
+
+					<ul>
+						<li><strong>Managed compute</strong>: open-weight models on dedicated GPUs, billed per accelerator-hour</li>
+						<li><strong>Serverless</strong>: Microsoft hosts it, billed by the token</li>
+					</ul>
+
+					<p>Then serverless alone has <strong>nine</strong> deployment types:</p>
+
+					<p>Global Standard, Global Provisioned, Global Batch, Data Zone Standard, Data Zone Provisioned, Data Zone Batch, Standard, Regional Provisioned, Developer.</p>
+
+					<p class="fragment">Two axes, not nine choices: <strong>pay-per-token or reserved</strong>, and <strong>global, data zone, or regional</strong>.</p>
+
+					<aside class="notes">
+						Do not read all nine. Put them on screen, let the room laugh, then explain the two axes that actually organize them: pay-per-token vs. reserved, and global vs. data zone vs. regional.
+					</aside>
+				</section>
+
+				<section data-background-image="presentation/assets/background/fireworks.jpg" data-background-opacity="0.2">
+					<h3>Instant Access</h3>
+
+					<p>Name a supported model and call it. This means no deployment, no deployment-type dropdown, and nothing to clean up.</p>
+
+					<p>This is a very promising development--or, at least it will be once it's GA.</p>
+
+					<p>Currently <strong>(Preview)</strong>, and your project has to be in <strong>West US 3</strong>.</p>
+
+					<aside class="notes">
+						Give credit where it is due. A skeptical talk that never says anything positive reads as a grudge, not an evaluation.
+					</aside>
+				</section>
+
+				<section data-background-image="presentation/assets/background/frame.jpg" data-background-opacity="0.2">
+					<h3>The Seam Moved</h3>
+
+					<p>Managed compute now runs in the new portal, on the same endpoint and SDK as everything else. <strong>(Preview)</strong></p>
+
+					<p>What still falls through to classic: gated Hugging Face models, CPU deployments, and Speech or Vision custom training.</p>
+
+					<p class="fragment">The new path has fine print of its own: no built-in content filtering, Global deployment only, and OpenAI fine-tuning only in the resource's <em>default</em> project.</p>
+				</section>
+
+				<section data-background-image="presentation/assets/background/demo.jpg" data-background-opacity="0.2">
+					<h3>Demo Time</h3>
+
+					<aside class="notes">
+						code/demos/03_catalog -- deploy from the catalog, hit the endpoint, then do the same thing with instant access and no deployment.
+					</aside>
+				</section>
+
+				<section data-background-image="presentation/assets/image/Bubbles.jpg" data-background-opacity="0.4">
+					<h3>Agenda</h3>
+
+					<ol>
+						<li>Microsoft Foundry (Today)</li>
+						<li>The Model Catalog: Read the Fine Print</li>
+						<li class="active">Agents: The Actual Product</li>
+						<li>Observability: Where Foundry Earns Its Keep</li>
+						<li>The Honest Assessment</li>
+					</ol>
+				</section>
+
+				<section data-background-image="presentation/assets/background/robot.jpg" data-background-opacity="0.2">
+					<h3>Foundry Is an Agent Platform Now</h3>
+
+					<p>The catalog, the SDK, the toolbox, and the tracing all exist to get an agent into production.</p>
+
+					<p class="fragment">Which also means: <strong>if you only need to call a model, you do not need Foundry.</strong></p>
+
+					<aside class="notes">
+						This is the thesis of the whole talk. If the room remembers one sentence, make it this one. Fourteen minutes is the biggest block for a reason.
+					</aside>
+				</section>
+
+				<section data-background-image="presentation/assets/background/two-directions.jpg" data-background-opacity="0.2">
+					<h3>A Spectrum, Not a Product</h3>
+
+					<p>One decision, not three: <strong>how much of the runtime do you want to own?</strong></p>
+
+					<ul>
+						<li><strong>Prompt agent</strong>: instructions, a model, tools. Nothing to manage.</li>
+						<li><strong>Hosted agent</strong>: your code, your framework. Foundry runs the container.</li>
+						<li><strong>Responses API</strong>: your process, your code. No agent resource at all.</li>
+					</ul>
+
+					<p>Least to manage, down to most control. You can start at the top and move down later.</p>
+
+					<aside class="notes">
+						Draw it as a line from "least to manage" to "most control." For an audience new to Azure, this framing is more useful than the feature list.
+
+						Q&A prep -- autopilots (2026-08-25). Someone may ask where they fit. They are a different axis: this slide is about who owns the RUNTIME, autopilots are about IDENTITY. An autopilot is an agent with its own Entra agent user account, so it acts as itself in Microsoft 365 -- email, Teams, calendar. Only hosted agents can be published as autopilot blueprints. If anything it strengthens section 6: an agent with its own M365 identity is the control plane at its deepest.
+					</aside>
+				</section>
+
+				<section data-background-image="presentation/assets/background/thinking-emoji.jpg" data-background-opacity="0.2">
+					<h3>Same Model, Same Instructions, Different Answers</h3>
+
+					<p>&ldquo;Should I build my RAG pipeline on Prompt Flow?&rdquo;</p>
+
+					<p><strong>Without tools:</strong> answers from training data. Sounds reasonable either way.</p>
+
+					<p><strong>With the registry:</strong> <em>&ldquo;Retired. Full retirement 2027-04-20.&rdquo;</em></p>
+
+					<aside class="notes">
+						THE moment in section 4. Say BEFORE running it that the only difference is the tool, or the contrast reads as luck.
+
+						What a tool buys you is not "the agent can do more things." It is "the agent stops guessing about things it cannot know."
+
+						This is also the callback to section 1 -- the agent tells the room the fact the talk opened with. Let it land.
+
+						If the tool-less agent happens to get it right: "It guessed well. It still guessed, and it cannot tell you which of its answers are guesses."
+					</aside>
+				</section>
+
+				<section data-background-image="presentation/assets/background/tags.jpg" data-background-opacity="0.2">
+					<h3>Toolbox</h3>
+
+					<p>One agent with one tool is easy. Ten agents sharing six tools is a governance problem.</p>
+
+					<p>Curate once, serve behind a single managed MCP endpoint, version the set.</p>
+
+					<ul>
+						<li><strong>Consumer endpoint</strong>: always the default version. Promote without redeploying agents.</li>
+						<li><strong>Developer endpoint</strong>: pinned, for validating before you promote.</li>
+					</ul>
+
+					<aside class="notes">
+						That two-endpoint split IS the versioning story. Show create_toolbox.py printing both.
+						UPDATED 2026-09-24 (September recap): hosted-agent toolboxes are GA, and prompt-agent toolboxes went to PUBLIC PREVIEW. If asked "can a prompt agent use a toolbox?" -- yes, in preview. The GA path is still the hosted agent, which is why the demo goes prompt agent -> toolbox -> hosted agent.
+
+						Also GA on 2026-09-24: Tool Search, which exposes tool_search and call_tool through a toolbox, so an agent can find the right tool in a large toolbox instead of loading every tool definition up front.
+					</aside>
+				</section>
+
+				<section data-background-image="presentation/assets/background/stoplight.jpg" data-background-opacity="0.2">
+					<h3>Read the Fine Print on Your Guardrail</h3>
+
+					<p>Toolbox tools carry <code>require_approval</code>. Set it to <strong>always</strong> and you would expect the platform to stop the call.</p>
+
+					<p>It does not. The toolbox MCP endpoint <strong>does not block</strong> <code>tools/call</code>. <em>Your runtime</em> has to enforce it.</p>
+
+					<p>And a system prompt instruction is not enforcement.</p>
+
+					<aside class="notes">
+						Straight from the docs. This is the single best "read the fine print" moment in the talk, because it is a control that LOOKS like a guardrail and is actually a flag your own code must honor.
+
+						Not a gotcha for its own sake -- it is exactly the kind of thing a skeptical developer is right to check, and the kind of thing a keynote will never mention. Set it up as: the feature is real, the documentation is honest about it, and you would never learn it from the marketing.
+
+						Tie to section 6: this is what "high lock-in at the control plane" means in practice. You inherit the governance model, including the parts it does not actually enforce.
+
+						If asked "so how DO I enforce it?": Foundry now ships a human-in-the-loop primitive (preview) for long-running hosted agents -- a @multi_turn_task that suspends and resumes on the same task_id. Note what that is. It is a pause mechanism you wire into YOUR runtime. It reinforces this slide rather than contradicting it: Microsoft's own answer to enforcement is "in your code."
+					</aside>
+				</section>
+
+				<section data-background-image="presentation/assets/background/rollercoaster.jpg" data-background-opacity="0.2">
+					<h3>Bring Your Own Framework</h3>
+
+					<p>Microsoft Foundry supports Agent Framework, LangGraph, OpenAI Agents SDK, Anthropic Agent SDK, and the GitHub Copilot SDK.</p>
+
+					<p>For each of these, you zip the source. Then, Foundry builds it remotely and runs it with a managed endpoint, autoscale, and the agent's <strong>own Entra identity</strong>.</p>
+
+					<p>Two lines connect our agent to the toolbox, and we do so <strong>by name, not by URL</strong>. Promote a toolbox version and it picks it up with no redeploy.</p>
+
+					<aside class="notes">
+						Show main.py. Point at FoundryToolbox(credential) -- there is no server URL in the file. That is the payoff for having built the toolbox in step 3.
+
+						Then point at assess_adoption_risk: a plain dict. "Retired means BLOCK" is not a sentence a model might reinterpret, it is code, and it is testable. THAT is what the full-code end of the spectrum buys you.
+
+						Then the section 6 seed: apart from two imports this is an Agent Framework agent. It would run elsewhere.
+					</aside>
+
+				</section>
+
+				<section data-background-image="presentation/assets/background/demo.jpg" data-background-opacity="0.2">
+					<h3>Demo Time</h3>
+
+					<aside class="notes">
+						code/demos/04_agents -- four steps:
+						  1. prompt_agent.py          bare agent, no tools
+						  2. agent_with_mcp.py        WITH/WITHOUT contrast -- the one that matters
+						  3. create_toolbox.py        curate and version
+						  4. invoke_hosted_agent.py   Agent Framework agent, toolbox by name
+
+						DEPLOY THE HOSTED AGENT IN THE MORNING. Remote build takes minutes.
+						On stage run invoke_hosted_agent.py, never deploy_hosted_agent.py.
+
+						Longest demo in the talk. Rehearse the step 1 to step 2 transition; that is where it drags.
+					</aside>
+				</section>
+
+				<section data-background-image="presentation/assets/image/Bubbles.jpg" data-background-opacity="0.4">
+					<h3>Agenda</h3>
+
+					<ol>
+						<li>Microsoft Foundry (Today)</li>
+						<li>The Model Catalog: Read the Fine Print</li>
+						<li>Agents: The Actual Product</li>
+						<li class="active">Observability: Where Foundry Earns Its Keep</li>
+						<li>The Honest Assessment</li>
+					</ol>
+				</section>
+
+				<section data-background-image="presentation/assets/background/rocket.jpg" data-background-opacity="0.2">
+					<h3>The Strongest Argument for the Platform</h3>
+
+					<p>Everything up to now you could have assembled yourself.</p>
+
+					<p>This is the part you would otherwise have to <strong>build</strong>, and the part that keeps working when you switch companies.</p>
+
+					<p class="fragment">This is the part of the product most worth paying for.</p>
+				</section>
+
+				<section data-background-image="presentation/assets/background/records.jpg" data-background-opacity="0.2">
+					<h3>Tracing Is OpenTelemetry</h3>
+
+					<p>Tracing captures every step of the agent's execution using OpenTelemetry spans rather than a proprietary format. The same spans can be exported to multiple observability backends, like Datadog, Grafana Tempo, Jaeger, or Honeycomb.</p>
+
+					<p class="fragment">This ensures that every action taken by the agent is recorded and can be analyzed later, providing full visibility into the agent's behavior.</p>
+
+					<p class="fragment">It also covers agents you did not build in Foundry.</p>
+
+					<aside class="notes">
+						LangChain, LangGraph, OpenAI SDK, Agent Framework, or custom instrumentation. This is the detail that makes it interesting to a skeptic.
+
+						COST NOTE, new in September: the hosted-agent runtime package (AgentServer Core 2.2.0) now defaults Azure Monitor trace sampling to 100%. Microsoft's own recap says "review trace volume and cost." The calculator models this -- tracing is cheap at 2 KB a run, and ten times that with content recording on.
+					</aside>
+				</section>
+
+				<section data-background-image="presentation/assets/background/checklist.jpg" data-background-opacity="0.2">
+					<h3>A Demo Is an Anecdote</h3>
+
+					<p>In section 4 I showed you one question and one answer. That is a story, not evidence. Let's fix that here.</p>
+
+					<p>We'll send a set of twelve questions to both agents and collect their responses. <strong>Now it is a number you can put in a pull request.</strong></p>
+				</section>
+
+				<section data-background-image="presentation/assets/background/repetition.jpg" data-background-opacity="0.2">
+					<h3>One Evaluation, Two Runs</h3>
+
+					<p>The rubric is generated from the agent's own instructions and tools, so the judge scores what the agent was actually built to do.</p>
+
+					<p>One evaluation is a <strong>container</strong>: every run under it shares a schema and produces the same metrics. That is what makes two runs comparable.</p>
+
+					<aside class="notes">
+						Print the rubric dimensions on screen. Seeing the judge's criteria is what stops evaluation looking like one black box scoring another.
+
+						The shared-schema point is not pedantry -- it is the difference between "two numbers" and "a comparison."
+
+						Detail worth one line: response maps to sample.output_items, not output_text, so the judge sees the TOOL CALLS and can tell whether the agent looked anything up at all.
+
+						If the tool-less agent scores well on coherence: that is the teaching moment. Coherence measures whether an answer reads well, not whether it is true. Point at the rubric's accuracy dimensions.
+					</aside>
+				</section>
+
+				<section data-background-image="presentation/assets/background/record-player.jpg" data-background-opacity="0.2">
+					<h3>Continuous Evaluation</h3>
+
+					<p>Everything so far ran against a test set, before release. This runs against <strong>production</strong>.</p>
+
+					<p>It scores sampled live traffic and writes the results into Application Insights, next to the traces.</p>
+
+					<p>Evaluate and trace become two views of one event. <strong>(Preview)</strong></p>
+
+					<aside class="notes">
+						This is the actual product differentiator: the loop from "quality problem detected" to "problem diagnosed" closes without leaving the tool.
+
+						New 2026-09-24, public preview: Insights, which groups recurring trace behavior into findings with evidence and proposed next steps. It is the next rung up from continuous evaluation -- the platform proposing the diagnosis, not just the score. Mention it if the section is running long on time; skip it if not.
+					</aside>
+				</section>
+
+				<section data-background-image="presentation/assets/image/Bubbles.jpg" data-background-opacity="0.4">
+					<h3>Twelve Requests: Operations</h3>
+
+					<img src="presentation/assets/image/Monitoring.png" alt="The agent's Monitor tab in Foundry showing operational metrics: 12 agent runs, 11.1K tokens, 14 tool calls, and a 0% error rate" height="500" />
+
+					<aside class="notes">
+						The agent's Monitor tab after the twelve demo-5 questions ran through it as live traffic: 12 runs, 11.1K tokens, 14 tool calls, no errors. Operational data, the kind every platform shows. Hold here for a beat, then advance.
+					</aside>
+				</section>
+
+				<section data-background-image="presentation/assets/image/Bubbles.jpg" data-background-opacity="0.4">
+					<h3>Twelve Requests: Quality and Safety</h3>
+
+					<img src="presentation/assets/image/Monitoring_Evaluation.png" alt="The same Monitor tab's evaluation section: coherence averaging 4.9 out of 5 and violence at 0, from the same twelve requests" />
+
+					<aside class="notes">
+						Same page, same twelve requests, scrolled down. Coherence 4.9 of 5, violence 0. A continuous evaluation rule scored every response as it completed, and the scores landed beside the latency and token charts from the previous slide.
+
+						This is "evaluate and trace become two views of one event" made literal. You did not run a separate job or export anything: the quality score and the operational data come from the same traffic, on the same page.
+
+						Screenshots from the 2026-10-16 rehearsal, made with code/demos/05_observability/continuous_eval.py. Shown as screenshots because continuous evaluation scores production traffic, and the room has none.
+					</aside>
+				</section>
+
+				<section data-background-image="presentation/assets/background/demo.jpg" data-background-opacity="0.2">
+					<h3>Demo Time</h3>
+
+					<aside class="notes">
+						code/demos/05_observability:
+						  trace_agent.py   run this at the START of the section -- 2-5 min ingestion lag
+						  evaluate.py      rubric generation + two runs; the longest-running thing in the talk
+
+						Run it ON STAGE with --reuse-rubric: rehearsal took about 2.5 minutes (capacity 100). Fill the wait with the trace from trace_agent.py.
+
+						Rehearsal result, 2026-10-16: rubric passed 11 of 12 WITH the registry, 7 of 12 WITHOUT. Coherence 12 of 12 for both. LLM judges vary, so expect the numbers to move a little; the gap is the point. If it ever comes out flat, open the per-row reasoning in the portal instead.
+
+						setup.sh connects App Insights to the project; if traces are missing, re-run it (it skips what already exists).
+					</aside>
+				</section>
+
+				<section data-background-image="presentation/assets/image/Bubbles.jpg" data-background-opacity="0.4">
+					<h3>Agenda</h3>
+
+					<ol>
+						<li>Microsoft Foundry (Today)</li>
+						<li>The Model Catalog: Read the Fine Print</li>
+						<li>Agents: The Actual Product</li>
+						<li>Observability: Where Foundry Earns Its Keep</li>
+						<li class="active">The Honest Assessment</li>
+					</ol>
+				</section>
+
+				<section data-background-image="presentation/assets/background/theme-park.jpg" data-background-opacity="0.2">
+					<h3>What Works</h3>
+
+					<p>Four things, and you watched all four:</p>
+
+					<ul>
+						<li><strong>Agent hosting.</strong> Zip a directory, get a managed endpoint, autoscale, and an Entra identity. No cluster, no ingress, no certificate.</li>
+						<li><strong>Framework portability.</strong> That was an Agent Framework agent. Foundry never asked it to be anything else.</li>
+						<li><strong>Observability.</strong> OpenTelemetry in, Application Insights out. It even works on agents that were never built here.</li>
+						<li><strong>One resource, one endpoint, one SDK.</strong> Genuinely better than the five endpoints it replaced.</li>
+					</ul>
+
+					<aside class="notes">
+						Lead with the positive. You have spent 45 minutes earning the right to criticize; spend the first minute here proving you are not just a hater.
+
+						"You watched all four" is the important framing -- none of this is taken on trust, they saw each one.
+
+						The "if I could only keep one" line matters. A skeptic who will not name a favorite is not credible; they sound like someone who decided before they started. Say it as a real preference, and say WHY: tracing and evals are the pieces you would otherwise have to build, and the pieces that keep working when you leave.
+					</aside>
+				</section>
+
+				<section data-background-image="presentation/assets/background/surfer-crash.jpg" data-background-opacity="0.2">
+					<h3>What Frustrates</h3>
+
+					<ul>
+						<li><strong>The seam.</strong> As Microsoft changes things around in Foundry, there are still rough spots and seams that catch you off guard. Things that used to work fine are now "classic" features and their replacements either don't exist or aren't GA.</li>
+						<li><strong>Preview holds up load-bearing walls.</strong> Instant access. Continuous evaluation. Client-side tracing. Memory. The features that make Foundry interesting are the ones with no SLA.</li>
+						<li><strong>The cadence outruns everyone.</strong> Including the docs, including the portal, including this talk.</li>
+					</ul>
+
+					<p>One fair distinction: <strong>the documentation is honest. The marketing is not.</strong> Every criticism in this talk came from Microsoft Learn.</p>
+
+					<aside class="notes">
+						Callback to Before We Start. The churn you warned them about at minute three is the churn that lands here at minute 47.
+
+						The last line is the most important one in the section, and it is the difference between a critique and a grudge. The require_approval finding, the managed compute fine print, the West US 3 limit -- all of it is documented. Microsoft wrote it down. The gap is between the docs and the keynote, not between the docs and reality.
+
+						That distinction also tells the room what to DO: read the docs, not the announcement. That is actionable advice, which "be skeptical" on its own is not.
+					</aside>
+				</section>
+
+				<section data-background-image="presentation/assets/background/security-padlock.jpg" data-background-opacity="0.2">
+					<h3>Lock-In, Precisely</h3>
+
+					<p>Ask it per layer, not once.</p>
+
+					<ul>
+						<li><strong>Framework layer: low.</strong> OpenTelemetry, MCP, A2A, an OpenAI-compatible API. <em>Exit cost:</em> swap the chat client and redeploy. Your agent code, prompts, and tool definitions all come with you.</li>
+						<li><strong>Control plane: high.</strong> Identity, RBAC, networking, toolbox governance, observability. <em>Exit cost:</em> rebuild all of it, including the approval enforcement Foundry never did for you.</li>
+					</ul>
+
+					<p>You are not locked into Foundry's <strong>code</strong>. You are locked into its <strong>operations</strong>.</p>
+
+					<aside class="notes">
+						Payoff for the seed planted in section 4. "Vendor lock-in, beware" is what every other talk says; this is the version that helps someone decide.
+
+						The last line is the takeaway. Say it slowly. It reframes the question from "can I leave?" to "what exactly would I be rebuilding?" -- and that is answerable, which the usual version is not.
+
+						Note the sting in the control-plane bullet: the thing you would have to rebuild includes a control you already had to implement yourself. That is a real cost, honestly stated, and it lands harder than any general warning.
+
+						If asked about data: conversation state can go in your own Cosmos DB, and traces go to any OTel backend. Neither is the hard part. The hard part is identity and governance.
+
+						Fresh control-plane example, 2026-09-24: network egress policy for hosted agents -- an outbound allow/deny list you run in Audit mode, then Enforced. Genuinely useful, and exactly the kind of governance that does not come with you when you leave.
+					</aside>
+				</section>
+
+				<section data-background-image="presentation/assets/background/calculator.jpg" data-background-opacity="0.2">
+					<h3>What It Actually Costs</h3>
+
+					<p>Example: a help desk agent supporting 2,000 employees who each generate 3 tickets per month. We want to triage issues, review a knowledge base over past tickets, perform web-based research assistance, and offer self-service chat.</p>
+
+					<table style="font-size:0.8em">
+						<tr><td>Web grounding</td><td style="text-align:right">$65</td><td style="text-align:right">42%</td></tr>
+						<tr><td>Container compute &mdash; 0.5 vCPU, 1 GiB, 24/7</td><td style="text-align:right">$49</td><td style="text-align:right">31%</td></tr>
+						<tr><td>Model tokens (gpt-5-mini)</td><td style="text-align:right">$31</td><td style="text-align:right">20%</td></tr>
+						<tr><td>Embeddings, file search, tracing</td><td style="text-align:right">&lt;$1</td><td style="text-align:right">&lt;1%</td></tr>
+						<tr><td><strong>Total</strong></td><td style="text-align:right"><strong>$154</strong></td><td style="text-align:right">$0.08/employee</td></tr>
+					</table>
+
+					<p class="fragment">The model is <strong>20%</strong> of the bill. Web search costs <strong>twice</strong> what the model does.</p>
+
+					<aside class="notes">
+						SWITCH TO THE CALCULATOR HERE -- pricing/index.html. This is the one slide where a live tool beats a static number, because the interesting part is how the total MOVES.
+
+						Every rate came from the public Azure Retail Prices API, pulled 2026-10-11. Say that: it is a no-auth public endpoint, so anyone in the room can check you. Re-pull with pricing/refresh-prices.py before delivery.
+
+						Three things to show on the sliders:
+
+						1. 2000 -> 2400 employees: $154 -> $175. Boring, linear, fine.
+						2. 3 -> 5 tickets per employee: $154 -> $225. Volume hurts more than headcount.
+						3. Self-service 35% -> 70%: $154 -> $150. It goes DOWN. Deflection removes a ticket, which removes its triage AND its research pass AND its web search calls. The feature that looks like an added cost is a net saving.
+
+						That third one is the payoff. Let the room notice it before you explain it.
+
+						The container floor: $49/month at 0.5 vCPU and 1 GiB, and it is identical at zero tickets. Scale it to 4 replicas at 2 vCPU / 4 GiB and it is $776 -- 88% of the bill, and still identical at zero tickets. That is the real argument for starting with the Responses API.
+
+						MODEL CHOICE IS A LEVER -- use the calculator's model dropdown. Same workload, real retail prices:
+						  gpt-6-luna    $133 total, model is  7% of the bill
+						  gpt-5-mini    $154 total, model is 20%   <- this slide
+						  gpt-5.4-mini  $202 total, model is 39%
+						  gpt-6.1-sol   $311 total, model is 60%
+						Price does not track recency: the newest model here is the cheapest, and gpt-5.4-mini costs three times gpt-5-mini. "The model is usually the cheap part" is true for small models and false for frontier ones -- which is the honest version of the claim.
+
+						What is NOT modelled, and say so if asked: provisioned throughput (a reservation, not a rate), Agent Commit Units, managed-compute accelerator hours, Azure AI Search if you outgrow file search, and log retention beyond ingestion.
+					</aside>
+</section>
+
+				<section data-background-image="presentation/assets/background/monkey-thinking.jpg" data-background-opacity="0.2">
+					<h3>Who Should Adopt This</h3>
+
+					<div class="container">
+						<div class="col">
+							<p><strong>Yes, if:</strong></p>
+							<ul>
+								<li>You are already on Azure, with Entra and networking sorted</li>
+								<li>You are building <em>agents</em>, not just calling a model</li>
+								<li>You want the tracing and evaluation story</li>
+								<li>You are a team, and governance is somebody's job</li>
+							</ul>
+						</div>
+						<div class="col">
+							<p><strong>No, if:</strong></p>
+							<ul>
+								<li>You are not on Azure. The control plane <em>is</em> the value, and it does not travel.</li>
+								<li>You only need inference. Call an API.</li>
+								<li>Open weights are the core of your product. That path is preview, and gated models still need classic.</li>
+								<li>Preview in production is not something you can sign off on</li>
+							</ul>
+						</div>
+					</div>
+
+					<aside class="notes">
+						Do not hedge. A skeptic talk that will not give a recommendation has wasted the hour.
+
+						The sharpest line here is "the control plane IS the value." It resolves the whole talk: the thing you are locked into is also the thing you are buying. If you already pay that cost for other reasons -- Entra, networking, compliance -- Foundry is close to free architecturally. If you do not, you are buying a governance model you did not need and paying in portability.
+
+						The "only need inference" case is worth saying warmly rather than dismissively. Plenty of the room is in it, and telling them to just call an API is the most useful thing they will hear today. It also sets up the first takeaway on the next slide.
+					</aside>
+				</section>
+
+				<section data-background-image="presentation/assets/background/wrappingup.jpg" data-background-opacity="0.2">
+					<h3>Wrapping Up</h3>
+
+					<p>There is a real product here, but not the one the keynote sold you.</p>
+
+					<p>Key takeaways:</p>
+					<ul>
+						<li>Start with the <strong>Responses API</strong>: lowest commitment, easiest exit</li>
+						<li>Keep agent logic in <strong>your</strong> repo; use Foundry for hosting, identity, and observability</li>
+						<li>Ignore the catalog count and focus on the commercial tier</li>
+						<li>Lock-in is low at the framework layer and <strong>high at the control plane</strong></li>
+						<li>Assume anything in preview will move</li>
+					</ul>
+				</section>
+
+				<section data-background-image="presentation/assets/background/wrappingup.jpg" data-background-opacity="0.2">
+					<h3>Wrapping Up</h3>
+
+					<p>
+						To learn more, go here:
+						<br />
+						<a href="https://csmore.info/on/foundry-skeptic">https://csmore.info/on/foundry-skeptic</a>
+					</p>
+					<br />
+					<p>
+						And for help, contact me:
+						<br />
+						<a href="mailto:feasel@catallaxyservices.com">feasel@catallaxyservices.com</a> | <a href="https://www.twitter.com/feaselkl">@feaselkl</a>
+					</p>
+					<br />
+					<p>
+						Catallaxy Services consulting:
+						<br />
+						<a href="https://csmore.info/contact">https://CSmore.info/on/contact</a>
+					</p>
+				</section>
+			</div>
+		</div>
+
+		<script src="../reveal.js-6/dist/reveal.js"></script>
+		<script src="../reveal.js-6/dist/plugin/zoom.js"></script>
+		<script src="../reveal.js-6/dist/plugin/notes.js"></script>
+		<script src="../reveal.js-6/dist/plugin/search.js"></script>
+		<script src="../reveal.js-6/dist/plugin/markdown.js"></script>
+		<script src="../reveal.js-6/dist/plugin/math.js"></script>
+		<script src="../reveal.js-6/dist/plugin/highlight.js"></script>
+		<script src="../reveal.js-6/plugin/chart/Chart.min.js"></script>
+		<script src="../reveal.js-6/plugin/chart/plugin.js"></script>
+		<script>
+			// More info about initialization & config:
+			// - https://revealjs.com/initialization/
+			// - https://revealjs.com/config/
+			Reveal.initialize({
+				width: '70%',
+				controls: true,
+				progress: true,
+				center: true,
+				hash: true,
+				transition: 'fade',
+
+
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [ RevealZoom, RevealNotes, RevealSearch, RevealMarkdown, RevealHighlight, RevealMath, RevealChart ]
+			});
+		</script>
+	</body>
+</html>

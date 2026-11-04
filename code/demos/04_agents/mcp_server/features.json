@@ -1,0 +1,96 @@
+{
+  "_comment": "Curated Foundry lifecycle facts, verified against Microsoft Learn on 2026-09-19 and re-checked 2026-10-16. This is the same watch list that lives in the talk's planning notes. Re-verify before each delivery -- a demo that tells the room stale facts about staleness is a bad look.",
+  "_verified": "2026-10-16",
+  "features": [
+    {
+      "name": "Prompt Flow",
+      "status": "retired",
+      "detail": "Feature development ended 2026-04-20. Full retirement 2027-04-20. Survives only in the Foundry (classic) portal and is not recommended for new development.",
+      "replacement": "Microsoft Agent Framework",
+      "retirement_date": "2027-04-20"
+    },
+    {
+      "name": "Microsoft Agent Framework",
+      "status": "ga",
+      "detail": "Generally available since 2026-04-03. The stated migration path from Prompt Flow.",
+      "ga_date": "2026-04-03"
+    },
+    {
+      "name": "Assistants API",
+      "status": "replaced",
+      "detail": "Replaced by the Responses API (Agents v2). Threads/Messages/Runs/Assistants became Conversations/Items/Responses/Agent Versions.",
+      "replacement": "Responses API"
+    },
+    {
+      "name": "Observability",
+      "status": "ga",
+      "detail": "Evaluations, monitoring, and tracing went generally available in March 2026.",
+      "ga_date": "2026-03-01"
+    },
+    {
+      "name": "Client-side GenAI tracing",
+      "status": "preview",
+      "detail": "Experimental preview. Spans and attributes may change. Requires AZURE_EXPERIMENTAL_ENABLE_GENAI_TRACING=true."
+    },
+    {
+      "name": "Instant access",
+      "status": "preview",
+      "detail": "Call supported models by name with no deployment. Limited to the West US 3 region during preview."
+    },
+    {
+      "name": "Continuous evaluation",
+      "status": "preview",
+      "detail": "Scores sampled live traffic and writes results alongside traces in Application Insights."
+    },
+    {
+      "name": "Agent optimizer",
+      "status": "preview",
+      "detail": "Automatically generates improved instructions, skills, and tool descriptions for prompt and hosted agents."
+    },
+    {
+      "name": "Memory",
+      "status": "preview",
+      "detail": "Memory stores for agent conversations."
+    },
+    {
+      "name": "Monitoring dashboards",
+      "status": "preview",
+      "detail": "Built-in agent monitoring dashboards."
+    },
+    {
+      "name": "A2A",
+      "status": "mixed",
+      "detail": "Agent-to-agent protocol. v1.0 is generally available; v0.3 remains in preview."
+    },
+    {
+      "name": "Toolbox",
+      "status": "mixed",
+      "detail": "Curate tools once and expose them behind a single managed MCP endpoint with centralized auth, governance, and versioning. Generally available for hosted agents; public preview for prompt agents since 2026-09-24."
+    },
+    {
+      "name": "Hosted agents",
+      "status": "ga",
+      "detail": "Bring your own container or source zip on Agent Framework, LangGraph, the OpenAI Agents SDK, the Anthropic Agent SDK, or the GitHub Copilot SDK."
+    },
+    {
+      "name": "Managed compute",
+      "status": "preview",
+      "detail": "Now in the new Foundry portal. Open-weight models from the curated Hugging Face collection on dedicated GPUs, billed per accelerator-hour, on the same endpoint and SDK as other deployments. No built-in content filtering in its data path during preview, and Global deployment only. Gated models and CPU deployments still need the Foundry (classic) portal."
+    },
+    {
+      "name": "Hugging Face models",
+      "status": "mixed",
+      "detail": "Curated, ungated Hugging Face models deploy from the new Foundry portal through managed compute (preview), with weights pre-staged in Azure. Gated models, and models not in the curated collection, still deploy through the Foundry (classic) portal."
+    },
+    {
+      "name": "Fine-tuning",
+      "status": "ga",
+      "detail": "Model fine-tuning is generally available in Foundry projects in the new portal. OpenAI fine-tuning, Batch, and Stored completions work only in the resource's default project. Speech and Vision custom training still run through the Foundry (classic) portal."
+    },
+    {
+      "name": "Speech and Vision custom training",
+      "status": "classic",
+      "detail": "Custom model training for Foundry Tools such as Speech and Vision is out of scope for the new portal and runs through the Foundry (classic) portal."
+    }
+  ]
+}

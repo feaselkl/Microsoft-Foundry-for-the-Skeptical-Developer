@@ -1,0 +1,12 @@
+{"query": "Should I build a new RAG pipeline on Prompt Flow?"}
+{"query": "When does Prompt Flow stop being supported?"}
+{"query": "Is instant access generally available, or is it preview?"}
+{"query": "Can I deploy a Hugging Face model to managed compute from the new Foundry portal?"}
+{"query": "Is the Toolbox feature safe to build a production system on?"}
+{"query": "What replaced the Assistants API in Foundry?"}
+{"query": "Is Microsoft Agent Framework GA yet?"}
+{"query": "How much of Foundry is still in preview?"}
+{"query": "If I want to fine-tune a model, which portal do I end up in?"}
+{"query": "Is A2A generally available?"}
+{"query": "Is client-side GenAI tracing production-ready?"}
+{"query": "I want to use memory for agent conversations. Any concerns?"}
