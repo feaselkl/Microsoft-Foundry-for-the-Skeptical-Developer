@@ -26,8 +26,13 @@ LOCATION="${FOUNDRY_LOCATION:-westus3}"
 
 RESOURCE_GROUP="${FOUNDRY_RESOURCE_GROUP:-rg-foundry-skeptic}"
 PROJECT_NAME="${FOUNDRY_PROJECT_NAME:-proj-foundry-skeptic}"
-MODEL_NAME="${FOUNDRY_MODEL_NAME:-gpt-5-mini}"
-DEPLOYMENT_NAME="${FOUNDRY_DEPLOYMENT_NAME:-gpt-5-mini}"
+MODEL_NAME="${FOUNDRY_MODEL_NAME:-gpt-6-luna}"
+DEPLOYMENT_NAME="${FOUNDRY_DEPLOYMENT_NAME:-gpt-6-luna}"
+# Demo 3's instant-access model. Deliberately NOT the deployed model: when a
+# deployment's name matches a model name, the deployment takes precedence and
+# instant access for that name is unavailable in the project (Learn, "Deployment
+# name collisions"). Calling the deployed model "instantly" proves nothing.
+INSTANT_MODEL="${FOUNDRY_INSTANT_MODEL:-gpt-6-sol}"
 SKU_NAME="${FOUNDRY_SKU_NAME:-GlobalStandard}"
 # Capacity is a RATE LIMIT on a GlobalStandard deployment, not reserved
 # hardware: billing is per token either way, so a higher ceiling costs nothing.
@@ -456,7 +461,7 @@ cat > "$ENV_FILE" <<ENVEOF
 
 FOUNDRY_PROJECT_ENDPOINT=$PROJECT_ENDPOINT
 FOUNDRY_MODEL_DEPLOYMENT=$DEPLOYMENT_NAME
-FOUNDRY_INSTANT_MODEL=$MODEL_NAME
+FOUNDRY_INSTANT_MODEL=$INSTANT_MODEL
 FOUNDRY_AGENT_NAME=SkepticalDeveloperAgent
 ENVEOF
 
@@ -516,7 +521,11 @@ else
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer $TOKEN" \
             -d "{\"model\": \"$DEPLOYMENT_NAME\", \"input\": \"Reply with the single word: ready\"}" \
-            2>/dev/null || echo "000")
+            2>/dev/null || true)
+        # curl's -w already prints 000 when no response arrived. Appending a
+        # fallback "000" here used to produce "000000", which fell through to
+        # the give-up branch below on the very first attempt.
+        HTTP_CODE=${HTTP_CODE:-000}
 
         case "$HTTP_CODE" in
             2*)
@@ -525,11 +534,19 @@ else
                 VERIFY_OK=1
                 break
                 ;;
-            401|403)
+            000|401|403)
+                # 000 is no response at all. On a fresh build that is usually the
+                # new resource's custom domain not resolving yet -- as transient as
+                # RBAC propagation, so it gets the same patience.
                 ELAPSED=$(( $(date +%s) - VERIFY_START ))
                 if [ "$attempt" -lt "$MAX_ATTEMPTS" ]; then
-                    printf '    HTTP %s after %ss -- waiting for RBAC to propagate (%s/%s)\n' \
-                        "$HTTP_CODE" "$ELAPSED" "$attempt" "$MAX_ATTEMPTS"
+                    if [ "$HTTP_CODE" = "000" ]; then
+                        printf '    No response after %ss -- the endpoint may not resolve yet (%s/%s)\n' \
+                            "$ELAPSED" "$attempt" "$MAX_ATTEMPTS"
+                    else
+                        printf '    HTTP %s after %ss -- waiting for RBAC to propagate (%s/%s)\n' \
+                            "$HTTP_CODE" "$ELAPSED" "$attempt" "$MAX_ATTEMPTS"
+                    fi
                     sleep 30
                     # Mint a fresh token each attempt; the cached one can outlive
                     # the wait and it costs nothing to re-request.

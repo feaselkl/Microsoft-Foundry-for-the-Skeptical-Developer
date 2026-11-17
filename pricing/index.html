@@ -113,12 +113,12 @@
       <div class="ctl">
         <label for="model">Chat model <span class="val" id="model-v"></span></label>
         <select id="model" style="width:100%; background:var(--panel2); color:var(--ink); border:1px solid var(--line); border-radius:5px; padding:.4rem .5rem; font-size:.95rem">
-          <option value="gpt-6-luna">gpt-6-luna &mdash; $0.10 / $0.50</option>
-          <option value="gpt-5-mini" selected>gpt-5-mini &mdash; $0.25 / $2.00</option>
+          <option value="gpt-6-luna" selected>gpt-6-luna &mdash; $0.10 / $0.50</option>
+          <option value="gpt-5-mini">gpt-5-mini &mdash; $0.25 / $2.00</option>
           <option value="gpt-5.4-mini">gpt-5.4-mini &mdash; $0.75 / $4.50</option>
           <option value="gpt-6.1-sol">gpt-6.1-sol &mdash; $2.00 / $10.00</option>
         </select>
-        <span class="hint">Input / output per 1M tokens. Price does not track recency: the newest model here is the cheapest.</span>
+        <span class="hint">Input / output per 1M tokens. Price does not track recency: one of the newest models here is also the cheapest.</span>
       </div>
     </div>
 
@@ -203,7 +203,7 @@
   <p>
     <b>Prices.</b> Pulled from the public
     <a href="https://prices.azure.com/api/retail/prices" style="color:var(--accent)">Azure Retail Prices API</a>
-    on <b>2026-10-16</b>, USD, Global Standard deployment where a choice exists.
+    on <b>2026-11-17</b>, USD, Global Standard deployment where a choice exists.
     Data Zone runs roughly 10% higher. Re-pull with <code>python3 refresh-prices.py</code>
     and paste the result over the <code>PRICES</code> block in this file.
   </p>
@@ -229,12 +229,12 @@
 </footer>
 
 <script>
-// Azure Retail Prices API, re-verified 2026-10-16 (unchanged from 2026-10-11), USD, Global Standard.
+// Azure Retail Prices API, re-verified 2026-11-17 (unchanged since 2026-10-11), USD, Global Standard.
 // Regenerate with refresh-prices.py.
 const PRICES = {
-  modelIn:      0.25,     // per 1M input tokens
-  modelCached:  0.025,    // per 1M cached input tokens
-  modelOut:     2.0,      // per 1M output tokens
+  modelIn:      0.10,     // per 1M input tokens (gpt-6-luna; the dropdown uses MODELS)
+  modelCached:  0.01,     // per 1M cached input tokens
+  modelOut:     0.50,     // per 1M output tokens
   embed:        2e-05,    // per 1K tokens
   fileSearch:   0.1,      // per GB per day
   webGrounding: 14.0,     // per 1K calls
@@ -245,11 +245,11 @@ const PRICES = {
 };
 
 // Per 1M tokens, Global Standard, short context. Same API, same pull date.
-// gpt-5-mini is the default because it is what the demo environment deploys
+// gpt-6-luna is the default because it is what the demo environment deploys
 // and what the section-6 slide quotes.
 const MODELS = {
   "gpt-6-luna":   { in: 0.10, cached: 0.01,  out: 0.50,  note: "GA 2026-09-22" },
-  "gpt-5-mini":   { in: 0.25, cached: 0.025, out: 2.00,  note: "retires 2027-02-09" },
+  "gpt-5-mini":   { in: 0.25, cached: 0.025, out: 2.00,  note: "retires 2027-07-13" },
   "gpt-5.4-mini": { in: 0.75, cached: 0.075, out: 4.50,  note: "retires 2027-09-21" },
   "gpt-6.1-sol":  { in: 2.00, cached: 0.10,  out: 10.00, note: "GA 2026-09-29" }
 };
@@ -307,7 +307,7 @@ function model(p) {
   const cachedTok = inTok * p.cached;
   const freshTok  = inTok - cachedTok;
 
-  const rate = MODELS[p.model] || MODELS["gpt-5-mini"];
+  const rate = MODELS[p.model] || MODELS["gpt-6-luna"];
   const costIn     = freshTok  / 1e6 * rate.in;
   const costCached = cachedTok / 1e6 * rate.cached;
   const costOut    = outTok    / 1e6 * rate.out;

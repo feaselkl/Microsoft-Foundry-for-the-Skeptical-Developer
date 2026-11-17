@@ -47,7 +47,7 @@ load_dotenv()
 REQUEST_TIMEOUT_SECONDS = 120
 
 PROJECT_ENDPOINT = os.environ["FOUNDRY_PROJECT_ENDPOINT"]
-MODEL = os.environ.get("FOUNDRY_MODEL_DEPLOYMENT", "gpt-5-mini")
+MODEL = os.environ.get("FOUNDRY_MODEL_DEPLOYMENT", "gpt-6-luna")
 MCP_SERVER_URL = os.environ.get("FOUNDRY_MCP_SERVER_URL")
 
 # Same instructions for both agents. The ONLY difference is the tool, and

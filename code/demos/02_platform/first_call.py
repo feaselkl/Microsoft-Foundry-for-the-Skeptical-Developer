@@ -22,7 +22,7 @@ load_dotenv()
 # Portal -> your project -> Overview -> Endpoints
 # Format: https://<resource>.services.ai.azure.com/api/projects/<project>
 PROJECT_ENDPOINT = os.environ["FOUNDRY_PROJECT_ENDPOINT"]
-MODEL = os.environ.get("FOUNDRY_MODEL_DEPLOYMENT", "gpt-5-mini")
+MODEL = os.environ.get("FOUNDRY_MODEL_DEPLOYMENT", "gpt-6-luna")
 
 
 def main() -> None:
@@ -39,7 +39,7 @@ def main() -> None:
 
     response = openai.responses.create(
         model=MODEL,
-        input="In two sentences, what is Microsoft Foundry, the new AI platform by Microsoft?",
+        input="In two sentences, what is Microsoft Foundry, the new(ish) AI platform by Microsoft?",
     )
 
     print(f"\nModel: {MODEL}")

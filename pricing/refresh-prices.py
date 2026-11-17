@@ -40,9 +40,9 @@ def get_json(url: str, attempts: int = 6) -> dict:
 # Exact meter names, Global Standard where a choice exists. Data Zone runs
 # roughly 10% higher; regional varies.
 WANTED = {
-    "GPT 5 Mini Inpt Glbl 1M Tokens":        ("modelIn",     "per 1M input tokens"),
-    "GPT 5 Mini cchd Inpt Glbl 1M Tokens":   ("modelCached", "per 1M cached input tokens"),
-    "GPT 5 Mini outpt Glbl 1M Tokens":       ("modelOut",    "per 1M output tokens"),
+    "6-luna ShortCo Inp Std Gl 1M Tokens":    ("modelIn",     "per 1M input tokens"),
+    "6-luna ShortCo Cd Inp Std Gl 1M Tokens": ("modelCached", "per 1M cached input tokens"),
+    "6-luna ShortCo Opt Std Gl 1M Tokens":    ("modelOut",    "per 1M output tokens"),
     "text-embedding-3-small-glbl Tokens":    ("embed",       "per 1K tokens"),
     "Assistants-File Search-glbl GB":        ("fileSearch",  "per GB per day"),
     "Web Grounding Calls":                   ("webGrounding","per 1K calls"),

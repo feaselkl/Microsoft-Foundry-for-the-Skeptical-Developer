@@ -49,7 +49,7 @@ from openai import APITimeoutError
 load_dotenv()
 
 PROJECT_ENDPOINT = os.environ["FOUNDRY_PROJECT_ENDPOINT"]
-MODEL = os.environ.get("FOUNDRY_MODEL_DEPLOYMENT", "gpt-5-mini")
+MODEL = os.environ.get("FOUNDRY_MODEL_DEPLOYMENT", "gpt-6-luna")
 AGENT = os.environ.get("FOUNDRY_TOOLED_AGENT_NAME", "SkepticWithRegistry")
 RULE_ID = "skeptic-continuous-eval"
 DATA_FILE = Path(__file__).parent / "eval_data" / "foundry_questions.jsonl"

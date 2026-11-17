@@ -30,7 +30,7 @@ takes minutes, not seconds.
 | Resource group | Holds everything, so teardown is one command | all |
 | Foundry resource (`AIServices`, S0) | The account, with project management enabled | all |
 | Project | The thing the SDK connects to | all |
-| Model deployment (`gpt-5-mini`, GlobalStandard) | A model to call by deployment name | 2, 3, 4, 5 |
+| Model deployment (`gpt-6-luna`, GlobalStandard) | A model to call by deployment name | 2, 3, 4, 5 |
 | Application Insights | Trace destination | 5 |
 
 `deploy-mcp-server.sh` adds a Container Apps environment and the MCP server.
@@ -139,7 +139,7 @@ Every setting is an environment variable:
 ```bash
 FOUNDRY_LOCATION=eastus \
 FOUNDRY_RESOURCE_GROUP=rg-my-demo \
-FOUNDRY_MODEL_NAME=gpt-5-mini \
+FOUNDRY_MODEL_NAME=gpt-6-luna \
 ./infra/setup.sh
 ```
 
@@ -149,8 +149,9 @@ FOUNDRY_MODEL_NAME=gpt-5-mini \
 | `FOUNDRY_RESOURCE_GROUP` | `rg-foundry-skeptic` |
 | `FOUNDRY_RESOURCE_NAME` | `foundry-skeptic-<user>` |
 | `FOUNDRY_PROJECT_NAME` | `proj-foundry-skeptic` |
-| `FOUNDRY_MODEL_NAME` | `gpt-5-mini` |
-| `FOUNDRY_DEPLOYMENT_NAME` | `gpt-5-mini` |
+| `FOUNDRY_MODEL_NAME` | `gpt-6-luna` |
+| `FOUNDRY_DEPLOYMENT_NAME` | `gpt-6-luna` |
+| `FOUNDRY_INSTANT_MODEL` | `gpt-6-sol` (demo 3; must not be a deployed model) |
 | `FOUNDRY_SKU_NAME` | `GlobalStandard` |
 | `FOUNDRY_SKU_CAPACITY` | `100` |
 | `FOUNDRY_APP_INSIGHTS_NAME` | `appi-foundry-skeptic` |
@@ -168,6 +169,28 @@ The script warns if you override it.
 
 If that regional limit lifts, this default stops mattering. It is on the watch list in
 the talk's Notion page.
+
+### Fallback: the TLS 1.3 handshake fails
+
+If every demo dies with `ConnectError: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred
+in violation of protocol`, check whether the region's front end is refusing TLS 1.3. This
+happened in West US 3 on 2026-11-17, after the environment had been working minutes earlier:
+
+```bash
+H=<resource>.services.ai.azure.com
+openssl s_client -connect $H:443 -servername $H -tls1_3 -brief </dev/null   # fails: unexpected eof
+openssl s_client -connect $H:443 -servername $H -tls1_2 -brief </dev/null   # Protocol version: TLSv1.2
+```
+
+If 1.3 fails and 1.2 works, cap the shell at TLS 1.2. No code change, and only processes
+started from that shell are affected:
+
+```bash
+export OPENSSL_CONF="$(pwd)/infra/openssl-tls12.cnf"   # from the repo root
+```
+
+Unset it once the 1.3 handshake works again. If both versions fail, this is not your
+problem: check your network, then the Azure status page.
 
 ## Application Insights Connection
 
@@ -204,8 +227,20 @@ If you ever need the portal route instead: **Manage** (upper right) → **Projec
 ```
 
 Deletes the whole resource group. It lists the contents first and requires you to type
-the resource group name to confirm. It then **waits** for the deletion to finish, usually
-several minutes, because two clean-up steps depend on it:
+the resource group name to confirm.
+
+Before the resource group goes, it deletes every **agent and toolbox** in the group's
+projects, through [`delete-agent-objects.py`](delete-agent-objects.py) (run it with
+`--dry-run` to list without deleting). These objects outlive the resource group. On
+2026-11-17 a rebuild under the same names brought back the previous delivery's agents and
+toolbox. The toolbox still defaulted to a deleted MCP server, and the hosted agent pointed
+at deleted Entra identities: it failed on every call, and Azure refused to delete it. If
+this step reports anything left behind, rebuild under different names or give the hosted
+agent a new `FOUNDRY_HOSTED_AGENT_NAME`. It needs `uv`, and the TLS fallback above if the
+region is refusing TLS 1.3.
+
+It then **waits** for the deletion to finish, usually several minutes, because two
+clean-up steps depend on it:
 
 - **Purging the Foundry account.** Azure soft-deletes Foundry accounts and blocks the name
   for 48 hours. `setup.sh` always uses the same name, so without a purge a rebuild within two

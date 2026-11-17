@@ -47,7 +47,6 @@ from azure.ai.projects import AIProjectClient
 from azure.ai.projects.models import (
     AgentEvaluatorGenerationJobSource,
     EvaluatorGenerationInputs,
-    EvaluatorGenerationJob,
     TestingCriterionAzureAIEvaluator,
 )
 from azure.identity import DefaultAzureCredential
@@ -57,7 +56,7 @@ from openai.types.eval_create_params import DataSourceConfigCustom
 load_dotenv()
 
 PROJECT_ENDPOINT = os.environ["FOUNDRY_PROJECT_ENDPOINT"]
-MODEL = os.environ.get("FOUNDRY_MODEL_DEPLOYMENT", "gpt-5-mini")
+MODEL = os.environ.get("FOUNDRY_MODEL_DEPLOYMENT", "gpt-6-luna")
 
 # The two agents from demo 4. Identical model, identical instructions; one has
 # the feature registry attached and one does not.
@@ -131,16 +130,16 @@ def generate_rubric(project: AIProjectClient):
     stops evaluation looking like a black box scoring another black box.
     """
     print(f"\nGenerating a rubric from '{TOOLED_AGENT}'...")
-    job = EvaluatorGenerationJob(
-        inputs=EvaluatorGenerationInputs(
-            model=MODEL,
-            evaluator_name=f"{RUBRIC_PREFIX}{uuid.uuid4().hex[:8]}",
-            evaluator_display_name="Lifecycle Accuracy",
-            sources=[AgentEvaluatorGenerationJobSource(agent_name=TOOLED_AGENT)],
-        ),
+    # GA since azure-ai-projects 2.8.0: the generation job left `.beta`, and it
+    # takes the inputs directly rather than wrapped in an EvaluatorGenerationJob.
+    job = EvaluatorGenerationInputs(
+        model=MODEL,
+        evaluator_name=f"{RUBRIC_PREFIX}{uuid.uuid4().hex[:8]}",
+        evaluator_display_name="Lifecycle Accuracy",
+        sources=[AgentEvaluatorGenerationJobSource(agent_name=TOOLED_AGENT)],
     )
     began = time.monotonic()
-    poller = project.beta.evaluators.begin_create_generation_job(job=job)
+    poller = project.evaluators.begin_create_generation_job(job=job)
     while not poller.done():
         print(f"  status={poller.status()}  ({clock(time.monotonic() - began)})")
         time.sleep(POLL_SECONDS)
@@ -157,7 +156,7 @@ def find_rubric(project: AIProjectClient, name: str | None):
     With a name, use that rubric's newest version. Without one, use the most
     recently created rubric this script has generated.
     """
-    evaluators = project.beta.evaluators
+    evaluators = project.evaluators
     if name:
         print(f"\nReusing rubric '{name}'...")
         versions = list(evaluators.list_versions(name))

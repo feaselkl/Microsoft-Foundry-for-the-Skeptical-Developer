@@ -84,6 +84,20 @@ def main() -> None:
         f"  FOUNDRY_TOOLBOX_NAME={version.name}"
     )
 
+    # A new version is NOT the default until someone promotes it -- which is the
+    # point of the developer endpoint. But it means a re-run (new MCP server URL,
+    # or a rebuild that inherited an old toolbox) leaves agents on the old one,
+    # silently. On 2026-11-17 a rebuilt project came back with October's v1 as
+    # default, still pointing at a deleted MCP server. Say so out loud.
+    default = project.toolboxes.get(version.name).get("default_version")
+    if str(default) != str(version.version):
+        print(
+            f"\nWARNING: the default is still v{default}, so agents using the consumer\n"
+            f"endpoint (including the hosted agent) will NOT see v{version.version}.\n"
+            f"Validate v{version.version} on the developer endpoint, then promote it:\n"
+            f"  project.toolboxes.update(\"{version.name}\", default_version=\"{version.version}\")"
+        )
+
 
 if __name__ == "__main__":
     main()

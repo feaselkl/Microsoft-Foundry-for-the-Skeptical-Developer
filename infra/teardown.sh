@@ -53,6 +53,24 @@ FOUNDRY_ACCOUNTS=$(az cognitiveservices account list --resource-group "$RESOURCE
 MANAGED_RGS=$(az group list \
     --query "[?managedBy && contains(managedBy, '/resourceGroups/${RESOURCE_GROUP}/')].name" \
     --output tsv 2>/dev/null || true)
+# 3. Agent Service objects -- agents and toolboxes. They OUTLIVE the resource
+#    group. On 2026-11-17 a rebuild under the same names brought back the
+#    previous delivery's agents and toolbox; the hosted agent pointed at deleted
+#    Entra identities, returned 500 on every call, and could not be deleted.
+#    So delete them first, while their identities still exist.
+#
+#    Endpoints come from the accounts IN THIS GROUP, never from code/.env: a
+#    hand-edited .env can point at a project this script has no business
+#    touching.
+PROJECT_ENDPOINTS=""
+while read -r NAME _; do
+    [ -z "$NAME" ] && continue
+    EPS=$(az cognitiveservices account project list --name "$NAME" --resource-group "$RESOURCE_GROUP" \
+        --query '[].properties.endpoints."AI Foundry API"' --output tsv 2>/dev/null || true)
+    PROJECT_ENDPOINTS="$PROJECT_ENDPOINTS $EPS"
+done <<< "$FOUNDRY_ACCOUNTS"
+PROJECT_ENDPOINTS=$(echo $PROJECT_ENDPOINTS)   # trim and collapse whitespace
+AGENT_CLEANUP="uv run --quiet --project $REPO_ROOT/code python $REPO_ROOT/infra/delete-agent-objects.py"
 
 # Show exactly what is about to be destroyed, rather than asking the user to
 # take it on faith.
@@ -75,6 +93,16 @@ if [ -n "$FOUNDRY_ACCOUNTS" ]; then
     echo "Foundry accounts to PURGE afterwards, skipping the 48-hour recovery window:"
     echo "$FOUNDRY_ACCOUNTS" | awk '{print "  " $1 " (" $2 ")"}'
 fi
+if [ -n "$PROJECT_ENDPOINTS" ]; then
+    echo ""
+    echo "Agent Service objects to delete FIRST (they outlive the resource group):"
+    if command -v uv > /dev/null 2>&1; then
+        # shellcheck disable=SC2086 -- one argument per endpoint
+        $AGENT_CLEANUP --dry-run $PROJECT_ENDPOINTS || true
+    else
+        echo "  (uv not found -- cannot list or delete them; see the warning below)"
+    fi
+fi
 echo ""
 echo "This cannot be undone."
 echo ""
@@ -85,6 +113,32 @@ read -r CONFIRM
 if [ "$CONFIRM" != "$RESOURCE_GROUP" ]; then
     echo "Input did not match. Nothing deleted."
     exit 1
+fi
+
+if [ -n "$PROJECT_ENDPOINTS" ]; then
+    echo ""
+    echo "Deleting agents and toolboxes..."
+    CLEANUP_OK=0
+    if command -v uv > /dev/null 2>&1; then
+        # shellcheck disable=SC2086 -- one argument per endpoint
+        if $AGENT_CLEANUP $PROJECT_ENDPOINTS; then
+            CLEANUP_OK=1
+        fi
+    fi
+    if [ "$CLEANUP_OK" -ne 1 ]; then
+        cat <<'AGENTWARN'
+
+    WARNING: some agents or toolboxes were not deleted (listed above), and the
+    resource-group delete will not remove them. If you rebuild with the SAME
+    resource and project names, they come back -- and a resurrected hosted agent
+    points at deleted identities and fails on every call.
+
+    Continuing with the resource-group delete. Before the next rebuild, either
+    use different names (FOUNDRY_RESOURCE_NAME / FOUNDRY_PROJECT_NAME), or give
+    each resurrected hosted agent a new FOUNDRY_HOSTED_AGENT_NAME.
+    If the TLS handshake failed, see "Fallback" in infra/README.md and re-run.
+AGENTWARN
+    fi
 fi
 
 echo ""

@@ -23,7 +23,7 @@ PROJECT_ENDPOINT = os.environ["FOUNDRY_PROJECT_ENDPOINT"]
 # The name YOU gave the deployment, which need not match the model name.
 # That indirection is the point: it is what lets you swap the model underneath
 # without touching application code.
-DEPLOYMENT = os.environ.get("FOUNDRY_MODEL_DEPLOYMENT", "gpt-5-mini")
+DEPLOYMENT = os.environ.get("FOUNDRY_MODEL_DEPLOYMENT", "gpt-6-luna")
 
 PROMPT = "Name three things a skeptical developer should check before adopting an AI platform."
 

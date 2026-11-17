@@ -7,7 +7,7 @@ platform now, and everything else is in service of that.
 
 ## The Scenario
 
-The agent **audits Microsoft Foundry's own feature lifecycle** &mdash; what is GA, what
+The agent **audits Microsoft Foundry's own feature lifecycle**: what is GA, what
 is preview, what is retired, what is stranded in the classic portal.
 
 That choice is doing real work. The room is never learning a toy domain and a product
@@ -141,6 +141,11 @@ uv run python demos/04_agents/invoke_hosted_agent.py # 4
 - **Remote build takes minutes and can fail late.** `main.py` and `requirements.txt` must
   be at the **root** of the zip; the deploy script checks and refuses otherwise. Deploy the
   morning of, and keep the previous version routed until the new one is active.
+- **The hosted agent's dependencies are pinned as a set, on purpose.** Foundry resolves
+  `hosted_agent/requirements.txt` fresh on every build, so a floating version changes the
+  demo between rehearsal and delivery. Pinning just one package is worse than pinning
+  none: one half-pinned build passed readiness, reported "active", and then failed on the
+  first toolbox call. Upgrade the whole set together; the comment in the file says why.
 - **Deploying needs `Foundry Project Manager` at project scope.** The agent's own identity
   is issued by Foundry, so there is nothing to assign for the agent itself.
 - **Scope creep.** Agent *design* belongs to "Build an Agent, Not a Chatbot." Keep this

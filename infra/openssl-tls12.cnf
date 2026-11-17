@@ -1,0 +1,28 @@
+# Stage fallback: cap OpenSSL at TLS 1.2 for everything in this shell.
+#
+# On 2026-11-17 the shared West US 3 front end for Foundry (one IP behind
+# <resource>.services.ai.azure.com, .openai.azure.com, .cognitiveservices.azure.com
+# and westus3.api.cognitive.microsoft.com) dropped every TLS 1.3 handshake while
+# TLS 1.2 to the same address kept working. Every demo failed with:
+#
+#   httpcore2.ConnectError: [SSL: UNEXPECTED_EOF_WHILE_READING]
+#   EOF occurred in violation of protocol
+#
+# No code change needed -- Python's ssl module reads this through OPENSSL_CONF:
+#
+#   export OPENSSL_CONF="$(pwd)/infra/openssl-tls12.cnf"   # from the repo root
+#   unset OPENSSL_CONF                                      # back to normal
+#
+# It affects only processes started from that shell, so it cannot leak into the
+# rest of the machine. Diagnose before reaching for it -- see infra/README.md.
+
+openssl_conf = default_conf
+
+[default_conf]
+ssl_conf = ssl_sect
+
+[ssl_sect]
+system_default = system_default_sect
+
+[system_default_sect]
+MaxProtocol = TLSv1.2

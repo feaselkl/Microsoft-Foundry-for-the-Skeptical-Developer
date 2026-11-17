@@ -34,6 +34,12 @@ uv run python demos/03_catalog/instant_access.py
 ## Stage Risks
 
 - **Instant access requires a project in West US 3** during preview. If `instant_access.py` fails while `deployed_call.py` works, check the region before anything else.
+- **The instant model must not be a deployment name.** If a deployment's name matches a
+  model name, the deployment takes precedence and instant access for that name is
+  unavailable. Until 2026-11-17 this demo called the deployed model, so it quietly went
+  through the deployment and proved nothing. It now uses gpt-6-sol (not deployed), and
+  `instant_access.py` refuses to run if the name collides. A brand-new resource can also
+  return 404 "Instant inference quota is still being initialized" for a while.
 - **Instant access is in preview.** Confirm it still works, and is still called that, the week of the talk. If it has changed, this demo needs rewriting and the corresponding slide needs a new claim.
 - **Deploying live burns time.** Have a deployment already made. Show the dropdown, cancel, and switch to the pre-made one.
 - **Marketplace models need a subscription step** the first time in a given subscription. Do this in advance or the demo stalls on a terms-acceptance dialog.

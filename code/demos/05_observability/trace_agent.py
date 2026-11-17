@@ -45,7 +45,7 @@ from opentelemetry import trace  # noqa: E402
 load_dotenv()
 
 PROJECT_ENDPOINT = os.environ["FOUNDRY_PROJECT_ENDPOINT"]
-MODEL = os.environ.get("FOUNDRY_MODEL_DEPLOYMENT", "gpt-5-mini")
+MODEL = os.environ.get("FOUNDRY_MODEL_DEPLOYMENT", "gpt-6-luna")
 AGENT_NAME = os.environ.get("FOUNDRY_AGENT_NAME", "SkepticalDeveloperAgent")
 
 

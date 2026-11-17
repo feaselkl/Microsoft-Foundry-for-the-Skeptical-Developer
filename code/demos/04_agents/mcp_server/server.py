@@ -4,16 +4,6 @@ Foundry Feature Registry -- a small MCP server for demo 4.
 Exposes a curated set of Microsoft Foundry lifecycle facts: what is GA, what is
 preview, what has been retired, and what is stranded in the classic portal.
 
-Why this, and not a weather tool? Two reasons.
-
-1. It is deterministic. No third-party API, no conference wifi dependency, no
-   rate limit. It returns the same answer every time you demo it.
-2. It is on-theme. The agent ends up auditing the platform it runs on, which is
-   the whole argument of the talk. Ask the model about Prompt Flow WITHOUT this
-   tool and it answers from training data. Ask it WITH the tool and it gives you
-   a retirement date. That contrast is the reason toolboxes exist, and it is the
-   point demo 4 has to land.
-
 Runs as a streamable-HTTP MCP server, which is what Foundry's toolbox connects
 to. Deploy with infra/deploy-mcp-server.sh.
 """
